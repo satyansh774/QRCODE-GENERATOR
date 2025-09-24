@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Awesome QR Code Generator</title>
+<!-- Simple modern styling -->
+<style>
+  :root{
+    --bg:#0f1724; --card:#0b1220; --accent:#06b6d4; --muted:#98a2b3; --glass: rgba(255,255,255,0.04);
+  }
+  *{box-sizing:border-box;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;}
+  body{margin:0; min-height:100vh; background:linear-gradient(180deg,var(--bg),#071021); color:#e6eef6; display:flex; align-items:center; justify-content:center; padding:28px;}
+  .wrap{width:100%; max-width:980px; display:grid; grid-template-columns:1fr 420px; gap:24px;}
+  .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border-radius:14px; padding:20px; box-shadow: 0 6px 24px rgba(2,6,23,0.7); border:1px solid rgba(255,255,255,0.03);}
+  h1{margin:0 0 6px 0; font-size:20px;}
+  p.sub{margin:0 0 16px 0; color:var(--muted); font-size:13px;}
+  label{display:block; font-size:13px; color:var(--muted); margin-bottom:6px;}
+  input[type="text"], textarea, select{width:100%; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.04); background:var(--glass); color:inherit; outline:none; font-size:14px;}
+  textarea{min-height:90px; resize:vertical;}
+  .row{display:flex; gap:12px;}
+  .col{flex:1;}
+  .controls{display:flex; gap:10px; margin-top:12px; align-items:center;}
+  button{background:var(--accent); color:#042; border:none; padding:10px 12px; border-radius:10px; cursor:pointer; font-weight:600;}
+  button.ghost{background:transparent; border:1px solid rgba(255,255,255,0.06); color:var(--muted); padding:8px 10px;}
+  .small{font-size:13px; padding:8px 10px; border-radius:9px;}
+  .rightCard{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; text-align:center;}
+  .preview{width:100%; padding:18px; border-radius:12px; background:linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01)); display:flex; align-items:center; justify-content:center; flex-direction:column;}
+  .qrBox{background:#fff; padding:14px; border-radius:12px; display:inline-block;}
+  .meta{color:var(--muted); font-size:13px;}
+  .footer{margin-top:14px; text-align:center; color:var(--muted); font-size:13px;}
+  .options{display:grid; grid-template-columns:repeat(2,1fr); gap:10px;}
+  .samples{display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;}
+  .chip{padding:6px 10px; background:rgba(255,255,255,0.03); border-radius:999px; cursor:pointer; font-size:13px; color:var(--muted); border:1px solid rgba(255,255,255,0.02);}
+  @media (max-width:880px){ .wrap{grid-template-columns:1fr; } .rightCard{order:-1} }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <!-- Left: Controls -->
+  <div class="card">
+    <h1>QR Code Generator</h1>
+    <p class="sub">Apna text / URL dalo, settings choose karo aur QR download karke use kar lo. Sab bug-free aur simple.</p>
+
+    <label>Text / URL</label>
+    <textarea id="inputText" placeholder="Type URL, text, phone (tel:...), SMS (sms:...), vCard ..."></textarea>
+
+    <div style="height:12px"></div>
+
+    <div class="options">
+      <div>
+        <label>Size (px)</label>
+        <input id="size" type="range" min="120" max="1200" value="300" />
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:6px;">
+          <span class="meta">120</span>
+          <span id="sizeVal" class="meta">300 px</span>
+          <span class="meta">1200</span>
+        </div>
+      </div>
+
+      <div>
+        <label>Error correction</label>
+        <select id="level">
+          <option value="L">L — Low (7%)</option>
+          <option value="M" selected>M — Medium (15%)</option>
+          <option value="Q">Q — Quartile (25%)</option>
+          <option value="H">H — High (30%)</option>
+        </select>
+
+        <div style="height:8px"></div>
+
+        <label>Margin (px)</label>
+        <input id="margin" type="number" min="0" max="80" value="8" />
+      </div>
+
+      <div>
+        <label>Foreground (QR color)</label>
+        <input id="fg" type="color" value="#0b1220" />
+      </div>
+
+      <div>
+        <label>Background</label>
+        <input id="bg" type="color" value="#ffffff" />
+      </div>
+    </div>
+
+    <div class="controls">
+      <button id="generate">Generate QR</button>
+      <button id="download" class="small ghost">Download PNG</button>
+      <button id="copyText" class="small ghost">Copy Text</button>
+      <button id="clear" class="small ghost">Clear</button>
+    </div>
+
+    <div style="height:12px"></div>
+
+    <div>
+      <label>Quick samples</label>
+      <div class="samples">
+        <div class="chip" data-val="https://vaagha.dev">https://vaagha.dev</div>
+        <div class="chip" data-val="mailto:hello@example.com">Email</div>
+        <div class="chip" data-val="tel:+919876543210">Call</div>
+        <div class="chip" data-val="sms:+919876543210:Hello from My QR!">SMS</div>
+        <div class="chip" data-val="WIFI:T:WPA;S:MyNet;P:password;;">WiFi</div>
+        <div class="chip" data-val="geo:23.9966,85.3510">Location</div>
+      </div>
+    </div>
+
+    <div class="footer">Pro tip: Use URLs or vCard for best results. URL paste karo aur Generate pe click karo.</div>
+  </div>
+
+  <!-- Right: Preview -->
+  <div class="card rightCard">
+    <div style="width:100%; display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <h1 style="font-size:16px; margin:0">Preview</h1>
+        <div class="meta">Live QR canvas — download or right-click to save</div>
+      </div>
+      <div class="meta" id="metaInfo">Size: 300px</div>
+    </div>
+
+    <div class="preview" style="width:100%; margin-top:8px;">
+      <div class="qrBox" id="qrContainer">
+        <!-- Canvas inserted here -->
+        <canvas id="qrCanvas"></canvas>
+      </div>
+      <div style="height:10px"></div>
+      <div id="qrText" class="meta">No QR generated yet</div>
+    </div>
+
+    <div style="width:100%; display:flex; gap:8px; margin-top:12px;">
+      <button id="download2">Download (alt)</button>
+      <button id="print" class="ghost">Print</button>
+      <button id="dataUrl" class="ghost">Get Data URL</button>
+    </div>
+
+    <div style="font-size:12px; color:var(--muted); margin-top:10px; text-align:left;">
+      <strong>Note:</strong> This page uses a small JS QR generator library (qrious) — offline generation, fast & reliable.
+    </div>
+  </div>
+</div>
+
+<!-- QRious library (lightweight) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+
+<script>
+  // Elements
+  const inputText = document.getElementById('inputText');
+  const generateBtn = document.getElementById('generate');
+  const downloadBtn = document.getElementById('download');
+  const download2 = document.getElementById('download2');
+  const copyTextBtn = document.getElementById('copyText');
+  const clearBtn = document.getElementById('clear');
+  const qrCanvas = document.getElementById('qrCanvas');
+  const qrText = document.getElementById('qrText');
+  const sizeRange = document.getElementById('size');
+  const sizeVal = document.getElementById('sizeVal');
+  const metaInfo = document.getElementById('metaInfo');
+  const fg = document.getElementById('fg');
+  const bg = document.getElementById('bg');
+  const level = document.getElementById('level');
+  const margin = document.getElementById('margin');
+
+  // create QRious instance bound to canvas
+  const qr = new QRious({
+    element: qrCanvas,
+    value: '',
+    size: parseInt(sizeRange.value,10),
+    background: bg.value,
+    foreground: fg.value,
+    level: level.value
+  });
+
+  // helper: render QR from current inputs
+  function renderQR(){
+    const text = inputText.value.trim();
+    if(!text){
+      qr.value = '';
+      qrText.textContent = 'No QR generated yet';
+      return;
+    }
+    const s = Math.max(120, Math.min(1200, parseInt(sizeRange.value || 300,10)));
+    qr.size = s;
+    qr.background = bg.value || '#ffffff';
+    qr.foreground = fg.value || '#000000';
+    qr.level = level.value || 'M';
+    qr.value = text;
+    qrCanvas.style.width = s + 'px';
+    qrCanvas.style.height = s + 'px';
+    qrText.textContent = text.length > 120 ? text.slice(0,120)+'...' : text;
+    sizeVal.textContent = s + ' px';
+    metaInfo.textContent = 'Size: ' + s + 'px • Level: ' + qr.level;
+  }
+
+  // initial render
+  renderQR();
+
+  // events
+  generateBtn.addEventListener('click', ()=>{
+    renderQR();
+    // smooth flash to show new QR
+    qrCanvas.animate([{transform:'scale(0.96)'},{transform:'scale(1)'}],{duration:160});
+  });
+
+  sizeRange.addEventListener('input', ()=>{
+    sizeVal.textContent = sizeRange.value + ' px';
+    metaInfo.textContent = 'Size: ' + sizeRange.value + 'px • Level: ' + level.value;
+  });
+
+  fg.addEventListener('input', ()=> { /* live preview optional */ });
+  bg.addEventListener('input', ()=> { /* live preview optional */ });
+
+  // download function
+  function downloadImage(filename='qr.png'){
+    // ensure latest render
+    renderQR();
+    try{
+      const dataUrl = qrCanvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }catch(e){
+      alert('Download failed — try the alternative button. Error: ' + e.message);
+    }
+  }
+
+  downloadBtn.addEventListener('click', ()=> downloadImage('qr.png'));
+  download2.addEventListener('click', ()=> downloadImage('qr.png'));
+
+  // alternative: print
+  document.getElementById('print').addEventListener('click', ()=>{
+    renderQR();
+    const data = qrCanvas.toDataURL('image/png');
+    const w = window.open('');
+    w.document.write('<img src="'+data+'" onload="window.print();window.onfocus=function(){setTimeout(()=>window.close(),200)}" style="max-width:100%;">');
+  });
+
+  // get data URL
+  document.getElementById('dataUrl').addEventListener('click', ()=>{
+    renderQR();
+    const data = qrCanvas.toDataURL('image/png');
+    prompt('QR Image data URL (use Ctrl+C to copy):', data);
+  });
+
+  // copy text (not image)
+  copyTextBtn.addEventListener('click', async ()=>{
+    const t = inputText.value.trim();
+    if(!t){ alert('Pehle text paste karo.'); return; }
+    try{
+      await navigator.clipboard.writeText(t);
+      copyTextBtn.textContent = 'Copied!';
+      setTimeout(()=> copyTextBtn.textContent = 'Copy Text', 1300);
+    }catch(e){
+      alert('Clipboard failed: ' + e.message);
+    }
+  });
+
+  clearBtn.addEventListener('click', ()=>{
+    inputText.value = '';
+    qr.value = '';
+    qrText.textContent = 'No QR generated yet';
+  });
+
+  // chips
+  document.querySelectorAll('.chip').forEach(c=>{
+    c.addEventListener('click', ()=> {
+      inputText.value = c.getAttribute('data-val');
+      renderQR();
+    });
+  });
+
+  // handy: generate on Enter (when focused in textarea with ctrl+enter)
+  inputText.addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter' && (e.ctrlKey || e.metaKey)){
+      generateBtn.click();
+      e.preventDefault();
+    }
+  });
+
+  // Improve UX: update colors and level then render live small delay
+  let liveTimer;
+  [fg,bg,level,margin].forEach(el=>{
+    el.addEventListener('input', ()=>{
+      clearTimeout(liveTimer);
+      liveTimer = setTimeout(()=>{
+        // margin is not directly supported by QRious; emulate by drawing onto larger canvas
+        applySettingsWithMargin();
+      }, 220);
+    });
+  });
+
+  function applySettingsWithMargin(){
+    // Basic approach: generate with QRious into temp canvas with desired size minus margin then place into final canvas
+    const text = inputText.value.trim();
+    const s = parseInt(sizeRange.value,10) || 300;
+    const m = Math.max(0, Math.min(80, parseInt(margin.value || 8,10)));
+    if(!text){ renderQR(); return; }
+
+    // create temp QRious to generate inner QR
+    const innerSize = Math.max(64, s - 2*m);
+    const tmp = new QRious({value: text, size: innerSize, foreground: fg.value, background: bg.value, level: level.value, element: null});
+    // draw onto main canvas with background
+    const ctx = qrCanvas.getContext('2d');
+    qrCanvas.width = s;
+    qrCanvas.height = s;
+    // background
+    ctx.fillStyle = bg.value || '#ffffff';
+    ctx.fillRect(0,0,s,s);
+    // place QR image centered
+    const img = new Image();
+    img.onload = ()=>{
+      ctx.drawImage(img, m, m, innerSize, innerSize);
+    };
+    img.src = tmp.toDataURL();
+    // update meta info
+    sizeVal.textContent = s + ' px';
+    metaInfo.textContent = 'Size: ' + s + 'px • Level: ' + level.value;
+    qrText.textContent = text.length > 120 ? text.slice(0,120)+'...' : text;
+  }
+
+  // When generate clicked, respect margin
+  generateBtn.addEventListener('click', applySettingsWithMargin);
+
+  // Safety: if QRious not loaded, fallback to alert
+  if(typeof QRious === 'undefined'){
+    alert('QR library load failed. Check internet connection or CDN.');
+  }
+</script>
+</body>
+</html>
